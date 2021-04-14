@@ -1,0 +1,2 @@
+#!/bin/bash
+xcall "jps | grep -v Jps"

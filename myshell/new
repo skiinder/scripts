@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if (($#==0)); then
+    echo No args!;
+    exit;
+fi
+
+if (($1<2 || $1>255)); then
+    echo Invalid args!;
+    exit
+fi
+
+hostnamectl --static set-hostname hadoop$1
+systemctl start network 1>/dev/null 2>&1
+LAN=$(ifconfig ens33 | grep broadcast | cut -d . -f 3)
+if [ -z $LAN ]
+then
+    read -p "读取网段失败，请手动输入：" -t 10 LAN
+    if [ -z $LAN ]
+    then
+        LAN=1
+    fi
+fi
+cat >/etc/sysconfig/network-scripts/ifcfg-ens33 <<EOF
+TYPE="Ethernet"
+BOOTPROTO="static"
+NAME="ens33"
+DEVICE="ens33"
+ONBOOT="yes"
+IPADDR="192.168.$LAN.$1"
+PREFIX="24"
+GATEWAY="192.168.$LAN.2"
+DNS1="192.168.$LAN.2"
+EOF
+
+reboot
+

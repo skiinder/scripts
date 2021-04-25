@@ -5,14 +5,15 @@ USR=atguigu
 OSS="http://hadoop3.oss-cn-zhangjiakou-internal.aliyuncs.com"
 export CLUSTER="hadoop102 hadoop103 hadoop104"
 
-function prt(){
+function prt() 
+{
   echo ">>>>>>>>  $1  <<<<<<<<"
 }
-function init_env(){
+function init_env() {
 prt "初始化环境变量"
 [ -f $ENV_FILE ] || touch $ENV_FILE
 sed -i "/CLUSTER/d" $ENV_FILE
-cat >>  $ENV_FILE << EOF
+cat >> $ENV_FILE << EOF
 #CLUSTER
 export CLUSTER="$CLUSTER"
 EOF
@@ -22,9 +23,8 @@ xcall "yum install -y epel-release" >/dev/null 2>&1
 xcall "yum install -y psmisc nc net-tools zip unzip rsync vim lrzsz ntp libzstd openssl-static tree iotop libaio pv pdsh" >/dev/null 2>&1
 }
 
-function add_site(){
-if [ ! -e $1 ]
-then
+function add_site() {
+if [ ! -e $1 ]; then
 touch $1
 cat > $1 << EOF
 <?xml version="1.0"?>
@@ -37,28 +37,26 @@ fi
   sed -i "/<\/configuration>/i<property><name>$2<\/name><value>$3<\/value><\/property>" $1
 }
 
-function add_property(){
-if [ ! -e $1 ]
-then
+function add_property() {
+if [ ! -e $1 ]; then
 touch $1
 fi
 sed -i "/$2/d" $1
 echo "$2=$3" >> $1
 }
 
-function install_package(){
+function install_package() {
   curl -s $OSS/$1 | pv | tar zxC /opt/module
 }
 
-function depend_on(){
-  for i in $@
-  do
+function depend_on() {
+  for i in $@; do
     case $i in
     "env")
-      su atguigu -c "which pv >/dev/null 2>&1" || init_env $CLUSTER
+      su - atguigu -c "which pv >/dev/null 2>&1" || init_env $CLUSTER
       ;;
     "java"|"mysql")
-      su atguigu -c "which $i >/dev/null 2>&1" || init_$i $CLUSTER
+      su - atguigu -c "which $i >/dev/null 2>&1" || init_$i $CLUSTER
       ;;
     "hadoop"|"zookeeper"|"hive"|"kafka"|"flume"|"sqoop"|"hbase"|"spark"|"azkaban"|"presto"|"kylin")
       test -d /opt/module/$i || init_$i $CLUSTER
@@ -68,7 +66,7 @@ function depend_on(){
     esac
   done
 }
-function init_java(){
+function init_java() {
 prt "正在初始化JAVA"
 depend_on env
 [ -z "$JAVA_HOME" ] && JAVA_HOME=/opt/module/jdk1.8.0_212
@@ -84,7 +82,7 @@ EOF
 xsync $ENV_FILE
 }
 
-function init_hadoop(){
+function init_hadoop() {
 depend_on java
 NN=$1
 RM=$2
@@ -146,7 +144,7 @@ prt "正在格式化Namenode"
 su - $USR -c "hdfs namenode -format 1>/dev/null 2>&1 &" 
 } 
 
-function init_zookeeper(){
+function init_zookeeper() {
 depend_on java
 prt "正在初始化Zookeeper"
 [ -z "$ZOOKEEPER_HOME" ] && ZOOKEEPER_HOME=/opt/module/zookeeper
@@ -184,8 +182,8 @@ cat <<'EOF'> $ZOOKEEPER_HOME/bin/zkS.sh
 #!/bin/bash
 xcall "zkServer.sh $@" 2>/dev/null | grep -v Client
 EOF
-chown $USR:$USR /home/$USR/bin/zkS.sh
-chmod +x /home/$USR/bin/zkS.sh
+chown $USR:$USR $ZOOKEEPER_HOME/bin/zkS.sh
+chmod +x $ZOOKEEPER_HOME/bin/zkS.sh
 }
 
 function init_mysql(){
@@ -288,8 +286,8 @@ case $1 in
   ;;
 esac
 EOF
-chown $USR:$USR /home/$USR/bin/kafka.sh
-chmod +x /home/$USR/bin/kafka.sh
+chown $USR:$USR $KAFKA_HOME/bin/kafka.sh
+chmod +x $KAFKA_HOME/bin/kafka.sh
 }
 
 function init_flume(){
@@ -569,10 +567,8 @@ function init_shucang(){
 }
 
 xcall "killall -9 java" 2>/dev/null
-for i in $*
-do
+for i in $*; do
   eval "init_$i $CLUSTER"
 done
 
 xcall "chown -R $USR:$USR /opt/module"
-

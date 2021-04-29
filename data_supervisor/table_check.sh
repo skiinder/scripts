@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
+# 脚本参数说明如下：
+# -t 表名
+# -d 日期
+# -c 列名
+# -n 指标名
+# -v 指标对应的参数，用冒号分隔
+#   指标              指标对应参数
+#   null_id           min:max
+#   dup               min:max
+#   range             range_min:range_max:min:max
+#   day_on_day        min:max
+#   week_on_week      min:max
+#   std_dev           min:max
+#   当对应指标超出min：max范围，会触发告警
 while getopts "t:d:c:n:v:" arg; do
     case $arg in
     t)
